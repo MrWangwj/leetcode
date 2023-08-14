@@ -87,33 +87,93 @@ import (
 // Related Topics 字符串 👍 1714 👎 0
 
 // leetcode submit region begin(Prohibit modification and deletion)
+
 func myAtoi(s string) int {
-	isBegin, b := false, 1
-	res := 0
+	return method1(s)
+}
+
+func method1(s string) int {
+	m := map[string][4]string{
+		// 空格 +/- number 其他
+		"start":     {"start", "signed", "is_number", "end"},
+		"signed":    {"end", "end", "is_number", "end"},
+		"is_number": {"end", "end", "is_number", "end"},
+		"end":       {"end", "end", "end", "end"},
+	}
+	res, state, n := 0, "start", 1
 	for i := 0; i < len(s); i++ {
-		if isBegin && s[i] > 9 {
-			return res
-		}
-
-		if b == -1 && s[i] > 9 {
-			b = 1
-		}
-
-		if s[i] == '-' {
-			b = -1
+		state = m[state][get(s[i])]
+		if state == "start" {
 			continue
 		}
-		if s[i] < 10 {
-			isBegin = true
-			if b == -1 && res*10+int(-s[i]) < math.MinInt32 {
+		if state == "signed" && s[i] == '-' {
+			n = -1
+			continue
+		}
+		if state == "is_number" {
+			t := int64(res*10 + int(s[i]-'0')*n)
+			if t < math.MinInt32 {
 				return math.MinInt32
 			}
-			if b == 1 && res*10+int(s[i]) > math.MaxInt32 {
+			if t > math.MaxInt32 {
 				return math.MaxInt32
 			}
-
-			res = res*10 + b*int(s[i])
+			res = int(t)
+			continue
 		}
+		if state == "end" {
+			return res
+		}
+	}
+	return res
+}
+func get(c uint8) int {
+	if c == ' ' {
+		return 0
+	}
+	if c == '-' || c == '+' {
+		return 1
+	}
+	if c >= '0' && c <= '9' {
+		return 2
+	}
+	return 3
+}
+
+func method2(s string) int {
+	isStar, res, b := false, 0, 1
+	for i := 0; i < len(s); i++ {
+		if !isStar {
+			if s[i] == ' ' {
+				continue
+			}
+
+			if s[i] == '+' {
+				b = 1
+				isStar = true
+				continue
+			}
+
+			if s[i] == '-' {
+				b = -1
+				isStar = true
+				continue
+			}
+		}
+
+		if s[i] > '9' || s[i] < '0' {
+			return res
+		}
+		isStar = true
+		n := int(s[i] - '0')
+		ts := int64(res*10 + b*n)
+		if b == -1 && ts < math.MinInt32 {
+			return math.MinInt32
+		}
+		if b == 1 && ts > math.MaxInt32 {
+			return math.MaxInt32
+		}
+		res = int(ts)
 	}
 	return res
 }
